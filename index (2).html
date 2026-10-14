@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>高師大冒險物語｜校園探索遊戲</title>
+<style>
+:root{--ink:#18314b;--cream:#fff8e8;--green:#67c58a;--yellow:#ffd45e;--blue:#67c9ef;--pink:#ff8eae}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:ui-rounded,"Trebuchet MS",system-ui,sans-serif;color:var(--ink);background:#b9e8f7}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#game{position:fixed;inset:0} .panel{background:rgba(255,250,235,.94);border:3px solid #fff;border-radius:20px;box-shadow:0 7px 0 rgba(24,49,75,.13);padding:12px 15px}
+#hud{position:absolute;left:14px;top:14px;display:flex;gap:8px;align-items:flex-start;pointer-events:none;flex-wrap:wrap;max-width:calc(100% - 28px)}
+.brand{font-weight:1000;letter-spacing:.03em;font-size:clamp(15px,2.4vw,22px)}.sub{font-size:11px;opacity:.7;font-weight:800}
+.stat{font-size:13px;font-weight:900;white-space:nowrap}
+#task{position:absolute;right:14px;top:14px;width:min(270px,42vw);pointer-events:none}
+#task h3{margin:0 0 5px;font-size:15px}#task p{margin:0;font-size:12px;line-height:1.5}
+#bottom{position:absolute;left:14px;bottom:14px;display:flex;gap:8px;align-items:end}
+.smallbtn{border:0;border-radius:13px;background:#fff8e8;color:var(--ink);padding:10px 13px;font-weight:900;box-shadow:0 4px 0 #c9bda2;cursor:pointer}
+#hint{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);max-width:70vw;text-align:center;font-weight:900;font-size:13px;background:#17334ddd;color:white;padding:9px 16px;border-radius:999px;pointer-events:none;white-space:nowrap}
+#overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(180deg,#b8e8f7dd,#ffe8b9ee);z-index:5}
+.modal{width:min(650px,100%);max-height:90vh;overflow:auto;text-align:center;padding:clamp(20px,5vw,38px);border-radius:28px;background:#fff9e9;border:5px solid white;box-shadow:0 12px 0 #86b5bf}
+.logo{font-size:clamp(30px,6vw,54px);font-weight:1000;line-height:1.08;letter-spacing:-.04em}.logo span{color:#f18b55}.eyebrow{font-size:12px;font-weight:1000;letter-spacing:.18em;color:#4d9a83;margin-bottom:10px}
+.modal p{line-height:1.7;color:#4a6070}.chips{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:16px 0}.chip{background:#e4f5d9;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:900}
+.primary{border:0;background:#ff9b57;color:#fff;font-weight:1000;font-size:17px;padding:14px 28px;border-radius:16px;box-shadow:0 5px 0 #d46e38;cursor:pointer}
+#mobileControls{position:absolute;inset:auto 12px 22px 12px;display:none;justify-content:space-between;align-items:end;pointer-events:none}
+.pad{display:grid;grid-template-columns:repeat(3,45px);grid-template-rows:repeat(2,45px);gap:5px;pointer-events:auto}
+.ctrl{border:2px solid #ffffffcc;background:#fff5d9dd;color:#23435a;border-radius:13px;font-size:20px;font-weight:1000;box-shadow:0 3px 0 #b9a986;touch-action:none}
+.pad .up{grid-column:2}.pad .left{grid-column:1;grid-row:2}.pad .down{grid-column:2;grid-row:2}.pad .right{grid-column:3;grid-row:2}
+.actions{display:flex;gap:8px;pointer-events:auto}.actions .ctrl{width:55px;height:55px;border-radius:50%;font-size:12px}
+#dialog{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);width:min(420px,calc(100% - 30px));display:none;z-index:3}
+#dialog strong{display:block;font-size:16px;margin-bottom:5px}#dialog p{margin:0 0 10px;font-size:13px;line-height:1.5}
+#dialog button{border:0;background:#70c994;color:#103d35;font-weight:1000;padding:8px 15px;border-radius:10px}
+#toast{position:absolute;left:50%;top:25%;transform:translate(-50%,-10px);opacity:0;background:#17334d;color:#fff;padding:11px 17px;border-radius:999px;font-weight:900;transition:.25s;pointer-events:none;z-index:4}
+@media(max-width:700px){#mobileControls{display:flex}#hint{bottom:105px;font-size:11px;max-width:88vw}#bottom{bottom:105px}#task{top:76px;right:10px;width:180px}#hud{left:10px;top:10px;max-width:calc(100% - 20px)}.panel{padding:9px 11px}#dialog{bottom:170px}}
+</style>
+</head>
+<body><div id="game"><canvas id="c"></canvas>
+<div id="hud"><div class="panel"><div class="brand">🎒 高師大冒險物語</div><div class="sub">NKNU CAMPUS QUEST</div></div><div class="panel stat">⭐ <span id="stars">0</span>/5　🪙 <span id="coins">0</span></div><div class="panel stat">🏅 <span id="badges">0</span>/4</div></div>
+<div id="task" class="panel"><h3 id="taskTitle">任務 01｜新生報到</h3><p id="taskText">走到校園服務站，和學長姐聊聊吧！</p></div>
+<div id="bottom"><button class="smallbtn" id="mapBtn">🗺️ 任務地圖</button><button class="smallbtn" id="helpBtn">❔ 操作說明</button></div>
+<div id="hint">WASD / 方向鍵移動　·　靠近角色按 E 互動</div>
+<div id="dialog" class="panel"><strong id="dialogTitle">校園夥伴</strong><p id="dialogText"></p><button id="dialogAction">接受任務</button></div><div id="toast"></div>
+<div id="mobileControls"><div class="pad"><button class="ctrl up" data-key="ArrowUp">▲</button><button class="ctrl left" data-key="ArrowLeft">◀</button><button class="ctrl down" data-key="ArrowDown">▼</button><button class="ctrl right" data-key="ArrowRight">▶</button></div><div class="actions"><button class="ctrl" id="interactMobile">互動<br> E</button><button class="ctrl" id="jumpMobile">跳躍<br>⤴</button></div></div>
+<div id="overlay"><div class="modal"><div class="eyebrow">A LITTLE CAMPUS ADVENTURE</div><div class="logo">高師大<br><span>冒險物語</span></div><p>歡迎來到你的校園冒險！探索可愛的 3D 風格校園、收集星星、認識校園夥伴，完成四項任務，解鎖「校園冒險家」徽章。</p><div class="chips"><span class="chip">✦ 校園探索</span><span class="chip">✦ 收集任務</span><span class="chip">✦ NPC 對話</span><span class="chip">✦ 手機可玩</span></div><button class="primary" id="startBtn">開始冒險　▶</button><p style="font-size:11px">電腦：WASD／方向鍵移動、E 互動、空白鍵跳躍<br>手機：使用畫面上的方向鍵與互動按鈕</p></div></div>
+</div>
+<script>
+(()=>{
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W=innerWidth,H=innerHeight,dpr=Math.min(devicePixelRatio||1,2);canvas.width=W*dpr;canvas.height=H*dpr;ctx.scale(dpr,dpr);
+const ui={stars:document.querySelector('#stars'),coins:document.querySelector('#coins'),badges:document.querySelector('#badges'),taskTitle:document.querySelector('#taskTitle'),taskText:document.querySelector('#taskText'),overlay:document.querySelector('#overlay'),dialog:document.querySelector('#dialog'),dialogTitle:document.querySelector('#dialogTitle'),dialogText:document.querySelector('#dialogText'),dialogAction:document.querySelector('#dialogAction'),hint:document.querySelector('#hint'),toast:document.querySelector('#toast')};
+let running=false,keys={},last=0,toastTimer=0,dialogType='',task=0,stars=0,coins=0,badges=0,camX=0,camY=0;
+const world={w:1900,h:1400};
+const player={x:240,y:280,vx:0,vy:0,dir:1,jump:0,step:0};
+const buildings=[
+{x:120,y:90,w:300,h:150,name:'教學大樓',c:'#f5bd79',roof:'#e98f68'},
+{x:690,y:110,w:290,h:160,name:'圖書館',c:'#a5d9c2',roof:'#5bb69c'},
+{x:1300,y:100,w:300,h:170,name:'藝術學院',c:'#d4b5ed',roof:'#a48bd0'},
+{x:180,y:690,w:330,h:175,name:'活動中心',c:'#f5d47b',roof:'#e9a94e'},
+{x:850,y:770,w:330,h:180,name:'行政大樓',c:'#9fd5ee',roof:'#65b5d8'},
+{x:1350,y:760,w:300,h:170,name:'創意工坊',c:'#f2b2bd',roof:'#e7829a'}
+];
+const paths=[{x:0,y:350,w:1900,h:100},{x:0,y:560,w:1900,h:90},{x:0,y:960,w:1900,h:100},{x:560,y:0,w:100,h:1400},{x:1120,y:0,w:95,h:1400},{x:0,y:1160,w:1900,h:90}];
+const trees=[];for(let i=0;i<68;i++){let x=40+(i*173)%1800,y=35+(i*251)%1320;if(!buildings.some(b=>x>b.x-30&&x<b.x+b.w+30&&y>b.y-35&&y<b.y+b.h+30))trees.push({x,y,r:13+(i%4)*3});}
+const spots=[
+{x:520,y:410,type:'npc',name:'小晴學姊',title:'任務 01｜新生報到',text:'嗨！歡迎來到高師大！先到校園裡收集 2 顆星星，熟悉一下環境吧。',need:2,done:false},
+{x:760,y:620,type:'star',got:false},{x:1000,y:460,type:'star',got:false},{x:1450,y:500,type:'star',got:false},{x:500,y:1030,type:'star',got:false},{x:1580,y:1080,type:'star',got:false},
+{x:1250,y:620,type:'npc',name:'阿哲同學',title:'任務 02｜校園尋寶',text:'校園裡藏著好多小驚喜！找到 5 顆星星，就能取得探索徽章。',need:5,done:false},
+{x:740,y:1100,type:'npc',name:'林老師',title:'任務 03｜知識挑戰',text:'小測驗時間！高師大位於哪個城市？',quiz:true,done:false},
+{x:1690,y:410,type:'chest',got:false},
+{x:1020,y:1080,type:'npc',name:'工坊夥伴',title:'任務 04｜創意工坊',text:'最後一關！找到右上方的寶箱，完成你的校園冒險。',final:true,done:false}
+];
+function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,2);canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}addEventListener('resize',resize);
+function rounded(x,y,w,h,r,fill,stroke){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=3;ctx.stroke()}}
+function poly(points,fill){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fillStyle=fill;ctx.fill()}
+function text(t,x,y,size=13,color='#24435a',align='center',weight='900'){ctx.font=`${weight} ${size}px system-ui`;ctx.textAlign=align;ctx.fillStyle=color;ctx.fillText(t,x,y)}
+function drawTree(t){ctx.fillStyle='#315c53';ctx.fillRect(t.x-3,t.y+6,6,17);ctx.fillStyle='#58b982';ctx.beginPath();ctx.arc(t.x,t.y,t.r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#8bdaa0';ctx.beginPath();ctx.arc(t.x-5,t.y-5,t.r*.58,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ffffff44';ctx.beginPath();ctx.arc(t.x-5,t.y-5,3,0,Math.PI*2);ctx.fill()}
+function drawBuilding(b){ctx.fillStyle='#8ba7a4';ctx.fillRect(b.x+10,b.y+b.h-3,b.w,14);rounded(b.x,b.y,b.w,b.h,12,b.c,'#fff8e6');poly([[b.x-10,b.y+18],[b.x+b.w*.5,b.y-32],[b.x+b.w+10,b.y+18]],b.roof);rounded(b.x+16,b.y+20,b.w-32,24,7,b.roof);for(let xx=b.x+28;xx<b.x+b.w-15;xx+=47){rounded(xx,b.y+61,25,35,5,'#e8f7f6','#fff');rounded(xx,b.y+107,25,30,5,'#e8f7f6','#fff')}rounded(b.x+b.w/2-20,b.y+b.h-50,40,50,8,'#9a775b','#fff0d0');text(b.name,b.x+b.w/2,b.y+b.h+25,14,'#23435a')}
+function drawPath(p){ctx.fillStyle='#e9d9b8';ctx.fillRect(p.x,p.y,p.w,p.h);ctx.strokeStyle='#d1c19f';ctx.lineWidth=2;ctx.setLineDash([15,13]);ctx.beginPath();if(p.w>p.h){ctx.moveTo(p.x,p.y+p.h/2);ctx.lineTo(p.x+p.w,p.y+p.h/2)}else{ctx.moveTo(p.x+p.w/2,p.y);ctx.lineTo(p.x+p.w/2,p.y+p.h)}ctx.stroke();ctx.setLineDash([])}
+function drawSpot(s){if(s.type==='star'){if(s.got)return;ctx.save();ctx.translate(s.x,s.y+Math.sin(performance.now()/250+s.x)*4);ctx.shadowColor='#ffd34e';ctx.shadowBlur=18;text('★',s.x,s.y,29,'#ffc83d');ctx.restore();return}
+if(s.type==='chest'){if(s.got){text('✨',s.x,s.y,22);return}rounded(s.x-21,s.y-13,42,29,7,'#b97840','#fff0b9');rounded(s.x-21,s.y-17,42,12,5,'#e6a34f','#fff0b9');rounded(s.x-4,s.y-7,8,11,3,'#ffe16a');text('寶箱',s.x,s.y+31,11);return}
+const near=Math.hypot(player.x-s.x,player.y-s.y)<95;ctx.fillStyle='#ffffff';ctx.beginPath();ctx.ellipse(s.x,s.y+10,18,7,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=s.name==='林老師'?'#4f80ba':s.name==='工坊夥伴'?'#9b76cc':'#f28b72';ctx.beginPath();ctx.arc(s.x,s.y-7,14,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ffe0bc';ctx.beginPath();ctx.arc(s.x,s.y-10,9,0,Math.PI*2);ctx.fill();ctx.fillStyle='#4a3540';ctx.beginPath();ctx.arc(s.x,s.y-15,9,Math.PI,Math.PI*2);ctx.fill();text(s.name,s.x,s.y+31,12);if(near){text('E 互動',s.x,s.y-32,12,'#fff');rounded(s.x-30,s.y-51,60,19,8,'#315b67');text('E 互動',s.x,s.y-37,11,'#fff')}}
+function drawPlayer(){let x=player.x,y=player.y-player.jump;ctx.fillStyle='#ffffff55';ctx.beginPath();ctx.ellipse(player.x,player.y+10,14,5,0,0,Math.PI*2);ctx.fill();ctx.save();ctx.translate(x,y);if(player.dir<0)ctx.scale(-1,1);let bob=Math.sin(player.step)*2;rounded(-11,-18+bob,22,27,8,'#ffad61','#fff7e5');ctx.fillStyle='#ffe0bb';ctx.beginPath();ctx.arc(0,-25+bob,11,0,Math.PI*2);ctx.fill();ctx.fillStyle='#6b4a3b';ctx.beginPath();ctx.arc(0,-30+bob,11,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-11,-29+bob,5,9);ctx.fillStyle='#24435a';ctx.beginPath();ctx.arc(4,-25+bob,1.5,0,Math.PI*2);ctx.fill();rounded(-10,7+bob,8,10,3,'#5c7bd8');rounded(2,7+bob,8,10,3,'#5c7bd8');ctx.restore()}
+function render(){ctx.clearRect(0,0,W,H);let scale=Math.min(W/920,H/650,1.2);let worldW=W/scale,worldH=H/scale;camX=Math.max(0,Math.min(world.w-worldW,player.x-worldW/2));camY=Math.max(0,Math.min(world.h-worldH,player.y-worldH/2));ctx.save();ctx.scale(scale,scale);ctx.translate(-camX,-camY);
+ctx.fillStyle='#bde9ce';ctx.fillRect(0,0,world.w,world.h);
+// subtle grass dots
+for(let i=0;i<130;i++){let x=(i*149)%world.w,y=(i*211)%world.h;ctx.fillStyle=i%2?'#a8ddb9':'#ccebd0';ctx.beginPath();ctx.arc(x,y,2,0,6.28);ctx.fill()}
+paths.forEach(drawPath);buildings.forEach(drawBuilding);trees.forEach(drawTree);
+rounded(70,280,180,55,15,'#ffdf87','#fff8e6');text('校園廣場',160,313,17);
+spots.forEach(drawSpot);drawPlayer();ctx.restore();
+requestAnimationFrame(render)}
+function updateTask(){ui.stars.textContent=stars;ui.coins.textContent=coins;ui.badges.textContent=badges;let titles=['任務 01｜新生報到','任務 02｜校園尋寶','任務 03｜知識挑戰','任務 04｜創意工坊','冒險完成！'];let desc=['走到小晴學姊身邊，收集 2 顆星星！','找到校園裡全部 5 顆星星，再去找阿哲。','回答林老師的校園小測驗。','前往創意工坊附近，打開隱藏寶箱。','你已成為高師大校園冒險家！'];ui.taskTitle.textContent=titles[Math.min(task,4)];ui.taskText.textContent=desc[Math.min(task,4)]}
+function say(title,content,button='繼續'){ui.dialogTitle.textContent=title;ui.dialogText.textContent=content;ui.dialogAction.textContent=button;ui.dialog.style.display='block'}
+function hideDialog(){ui.dialog.style.display='none'}
+function showToast(t){ui.toast.textContent=t;ui.toast.style.opacity=1;ui.toast.style.transform='translate(-50%,0)';clearTimeout(toastTimer);toastTimer=setTimeout(()=>{ui.toast.style.opacity=0;ui.toast.style.transform='translate(-50%,-10px)'},1900)}
+function interact(){if(!running)return;let target=spots.filter(s=>s.type!=='star'&&Math.hypot(player.x-s.x,player.y-s.y)<90).sort((a,b)=>Math.hypot(player.x-a.x,player.y-a.y)-Math.hypot(player.x-b.x,player.y-b.y))[0];if(!target){showToast('再靠近一點，就可以互動囉！');return}
+if(target.type==='chest'){if(stars<5){say('寶箱還沒解鎖','先收集 5 顆星星，再回來開啟寶箱！','知道了');return}if(!target.got){target.got=true;coins+=10;badges++;task=4;updateTask();say('🎉 終極寶箱開啟！','太厲害了！你完成校園探索，獲得「校園冒險家」徽章！','完成冒險');}else say('寶箱','你已經領取過獎勵囉！');return}
+if(target.quiz){say('林老師｜校園知識挑戰','高師大位於哪個城市？','選擇答案');ui.dialogAction.onclick=()=>{hideDialog();quizChoices()};return}
+if(target.final){if(stars>=5){task=4;badges=Math.max(badges,3);updateTask();say(target.name,'你已收集全部星星！前往寶箱完成最後挑戰。','出發');}else say(target.name,'再收集 '+(5-stars)+' 顆星星，就能解鎖最終寶箱！');return}
+if(target.name==='小晴學姊'){if(stars>=2){task=Math.max(task,1);badges=Math.max(badges,1);updateTask();say(target.name,'做得好！你已熟悉校園。接下來去找阿哲同學，完成尋寶挑戰。','繼續冒險')}else say(target.name,'歡迎來到高師大！先在校園裡找到 2 顆星星，再回來找我吧。','我知道了');return}
+if(target.name==='阿哲同學'){if(stars>=5){task=Math.max(task,2);badges=Math.max(badges,2);updateTask();say(target.name,'太棒了！你找到全部星星！去找林老師完成知識挑戰吧。','出發')}else say(target.name,'校園裡還有 '+(5-stars)+' 顆星星，沿著道路找找看！','繼續找');return}
+}
+function quizChoices(){ui.dialogTitle.textContent='選擇你的答案';ui.dialogText.innerHTML='';let old=ui.dialog.querySelector('.choices');if(old)old.remove();let box=document.createElement('div');box.className='choices';box.style.cssText='display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px';['高雄','台北','台中'].forEach(a=>{let b=document.createElement('button');b.textContent=a;b.style.cssText='border:0;border-radius:10px;padding:10px 16px;background:#dff2dc;font-weight:900;color:#214d3d';b.onclick=()=>{box.remove();if(a==='高雄'){task=Math.max(task,3);badges=Math.max(badges,3);updateTask();say('回答正確！','答對了！高師大位於高雄市。最後前往創意工坊，找到寶箱完成冒險。','繼續')}else say('再想一下','提示：高師大位於台灣南部。','再試一次')};box.appendChild(b)});ui.dialog.appendChild(box);ui.dialogAction.textContent='關閉';ui.dialogAction.onclick=()=>{box.remove();hideDialog()}}
+ui.dialogAction.onclick=hideDialog;
+function move(dt){if(!running||ui.dialog.style.display==='block')return;let dx=0,dy=0;if(keys.ArrowLeft||keys.a||keys.A)dx--;if(keys.ArrowRight||keys.d||keys.D)dx++;if(keys.ArrowUp||keys.w||keys.W)dy--;if(keys.ArrowDown||keys.s||keys.S)dy++;let len=Math.hypot(dx,dy)||1;player.x+=dx/len*190*dt;player.y+=dy/len*190*dt;if(dx)player.dir=dx>0?1:-1;if(dx||dy)player.step+=dt*12;player.x=Math.max(20,Math.min(world.w-20,player.x));player.y=Math.max(20,Math.min(world.h-20,player.y));
+for(const b of buildings){let px=Math.max(b.x,Math.min(player.x,b.x+b.w)),py=Math.max(b.y,Math.min(player.y,b.y+b.h));if(Math.hypot(player.x-px,player.y-py)<17){if(Math.abs(player.x-px)>Math.abs(player.y-py))player.x=player.x< b.x?b.x-18:b.x+b.w+18;else player.y=player.y<b.y?b.y-18:b.y+b.h+18}}
+for(const s of spots){if(s.type==='star'&&!s.got&&Math.hypot(player.x-s.x,player.y-s.y)<28){s.got=true;stars++;coins+=2;showToast('✨ 收集到星星！ +2 金幣');updateTask();}}
+let near=spots.some(s=>s.type!=='star'&&Math.hypot(player.x-s.x,player.y-s.y)<90);ui.hint.textContent=near?'按 E 與校園夥伴互動':'WASD / 方向鍵移動　·　靠近角色按 E 互動';
+}
+function loop(ts){let dt=Math.min((ts-last)/1000||0,.035);last=ts;move(dt);requestAnimationFrame(loop)}requestAnimationFrame(loop);render();
+document.addEventListener('keydown',e=>{keys[e.key]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();if(e.key.toLowerCase()==='e')interact();if(e.key===' '&&running){player.jump=18;setTimeout(()=>player.jump=0,180)}});
+document.addEventListener('keyup',e=>keys[e.key]=false);
+document.querySelectorAll('[data-key]').forEach(b=>{let k=b.dataset.key;b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true;b.setPointerCapture(e.pointerId)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
+document.querySelector('#interactMobile').onclick=interact;document.querySelector('#jumpMobile').onclick=()=>{player.jump=18;setTimeout(()=>player.jump=0,180)};
+document.querySelector('#startBtn').onclick=()=>{running=true;ui.overlay.style.display='none';showToast('冒險開始！先去找小晴學姊吧');updateTask()};
+document.querySelector('#helpBtn').onclick=()=>say('操作說明','電腦：WASD 或方向鍵移動，E 與人物互動，空白鍵跳躍。手機：使用左下方向鍵移動，右下按鈕互動或跳躍。收集星星、完成任務來解鎖徽章。','開始探索');
+document.querySelector('#mapBtn').onclick=()=>say('🗺️ 校園任務地圖','教學大樓 → 圖書館 → 活動中心 → 行政大樓 → 創意工坊。星星散落在道路和草地上；收集 5 顆星星後，前往右側偏上的寶箱。','知道了');
+})();
+</script></body></html>
